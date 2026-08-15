@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 浅色、无标题栏，匹配 Self 本身的浅色 UI -->
+    <style name="Theme.Self" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#f3f1ea</item>
+        <item name="android:navigationBarColor">#f3f1ea</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+</resources>
