@@ -6,6 +6,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# 发布 Release 需要写权限
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,8 +47,24 @@ jobs:
       - name: 编译 Debug APK
         run: cd android-app && gradle assembleDebug --no-daemon
 
-      - name: 上传 APK 产物
+      - name: 上传 APK 产物（Actions 内下载，备用）
         uses: actions/upload-artifact@v4
         with:
           name: self-app-debug
           path: android-app/app/build/outputs/apk/debug/*.apk
+
+      - name: 发布到 GitHub Releases（手机可直下）
+        uses: ncipollo/release-action@v1
+        with:
+          tag: latest
+          name: Self 安卓安装包（最新版）
+          body: |
+            Self 个人全能生活工作台 · 安卓安装包
+
+            📱 下载下面的 app-debug.apk，在手机上允许「未知来源」安装即可使用。
+            💾 所有数据保存在本机，不上传云端；建议定期点 App 内「导出」做备份。
+            🔄 每次推送代码到 main 分支，此发布会自动更新为最新构建。
+          artifacts: "android-app/app/build/outputs/apk/debug/*.apk"
+          allowUpdates: true
+          replacesArtifacts: true
+          token: ${{ secrets.GITHUB_TOKEN }}
