@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Self · 加载动画</title>
+<style>
+  :root{
+    --kaki:#d9c27e;
+    --gold:#e6c878;
+    --warm-grey:#d9cdb6;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    display:flex;align-items:center;justify-content:center;
+    background:#0b1220;
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    overflow:hidden;
+  }
+  /* 蓝白渐变磨砂玻璃背景 + 柔和环境光 */
+  .stage{
+    position:relative;
+    width:min(92vw,720px);
+    aspect-ratio:760/340;
+    border-radius:28px;
+    overflow:hidden;
+    background:
+      radial-gradient(120% 120% at 30% 20%, #f3f8ff 0%, #d8e6fb 38%, #bcd2f5 72%, #a4c0ee 100%);
+    box-shadow:0 30px 80px -20px rgba(40,80,160,.45), inset 0 1px 0 rgba(255,255,255,.6);
+    transition:opacity .45s ease;
+  }
+  .stage::before{
+    content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(40% 50% at 22% 30%, rgba(255,255,255,.55), transparent 70%),
+      radial-gradient(50% 60% at 80% 75%, rgba(180,205,245,.5), transparent 70%);
+    backdrop-filter:blur(2px);
+    -webkit-backdrop-filter:blur(2px);
+    pointer-events:none;
+  }
+  .stage.fading{opacity:0;}
+
+  /* 柔和呼吸光斑 */
+  .ambient{position:absolute;inset:0;pointer-events:none;}
+  .ambient span{
+    position:absolute;border-radius:50%;filter:blur(40px);opacity:.5;
+    animation:breathe 7s ease-in-out infinite;
+  }
+  .ambient .a1{width:240px;height:240px;left:-40px;top:-30px;background:#ffffff;}
+  .ambient .a2{width:200px;height:200px;right:-30px;bottom:-40px;background:#9fc0f0;animation-delay:2.5s;}
+  @keyframes breathe{0%,100%{transform:scale(1);opacity:.35}50%{transform:scale(1.15);opacity:.6}}
+
+  /* 极淡 3D 水晶棱镜衬底，缓慢旋转 */
+  .prism{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+  .prism svg{width:72%;height:85%;opacity:.14;animation:spin 26s linear infinite;transform-origin:50% 50%;}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+  /* 草书书写层 */
+  .ink{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .ink svg{width:88%;height:88%;overflow:visible;}
+
+  /* 白色描边：完成后作为实体边框出现，平时隐藏 */
+  #wordBorder{
+    fill:none;
+    stroke:#ffffff;
+    stroke-width:9;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    opacity:0;
+    transition:opacity .5s ease;
+  }
+  #wordBorder.done{
+    opacity:1;
+    /* 极轻暗色投影：制造字母整体的实体立体感，非彩色辉光 */
+    filter:drop-shadow(0 1.5px 2px rgba(58,42,18,.32));
+  }
+
+  #word{
+    fill:none;
+    stroke:url(#kakiGrad);
+    stroke-width:7;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    /* 书写中（虚幻）：半透明 + 轻微模糊 + 淡金柔光，似幻影 */
+    opacity:.55;
+    filter:blur(1.1px) drop-shadow(0 0 6px rgba(226,202,138,.55));
+    transition:opacity .5s ease, filter .5s ease, stroke .5s ease;
+  }
+  /* 完成态（实体）：不透明、清晰、无辉光；字宽与位置完全不变，仅换更亮金色并显示白色薄边 */
+  #word.done{
+    stroke:url(#kakiBright);
+    stroke-width:7;
+    opacity:1;
+    filter:none;
+  }
+
+  .hint{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:#5b6b86;font-size:12px;letter-spacing:.08em;opacity:.6;}
+</style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="ambient"><span class="a1"></span><span class="a2"></span></div>
+
+    <!-- 3D 水晶棱镜衬底 -->
+    <div class="prism">
+      <svg viewBox="0 0 200 200" fill="none" stroke="#7fa8e0" stroke-width="1.2">
+        <polygon points="100,18 168,60 168,140 100,182 32,140 32,60"/>
+        <polygon points="100,18 100,100 168,60"/>
+        <polygon points="100,18 100,100 32,60"/>
+        <polygon points="100,182 100,100 32,140"/>
+        <polygon points="100,182 100,100 168,140"/>
+        <line x1="32" y1="60" x2="100" y2="100"/>
+        <line x1="168" y1="60" x2="100" y2="100"/>
+        <line x1="32" y1="140" x2="100" y2="100"/>
+        <line x1="168" y1="140" x2="100" y2="100"/>
+      </svg>
+    </div>
+
+    <!-- 草书 Self 书写层 -->
+    <div class="ink">
+      <svg viewBox="0 0 760 340" id="svg">
+        <defs>
+          <linearGradient id="kakiGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffe9a0"/>
+            <stop offset="0.5" stop-color="#f5cf6e"/>
+            <stop offset="1" stop-color="#edc15e"/>
+          </linearGradient>
+          <linearGradient id="kakiBright" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#fff3bf"/>
+            <stop offset="0.5" stop-color="#f9dd8c"/>
+            <stop offset="1" stop-color="#f2d06f"/>
+          </linearGradient>
+          <radialGradient id="tipGlow">
+            <stop offset="0" stop-color="#fff4d6" stop-opacity="0.95"/>
+            <stop offset="0.4" stop-color="#ecd089" stop-opacity="0.7"/>
+            <stop offset="1" stop-color="#ecd089" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="particle">
+            <stop offset="0" stop-color="#ffeec0" stop-opacity="0.9"/>
+            <stop offset="1" stop-color="#ecd089" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <!-- 白色描边底（实体边框，完成后显示） -->
+        <path id="wordBorder" transform="translate(6,5)" d="
+          M 292 152
+          C 292 126, 234 126, 233 158
+          C 232 188, 294 186, 294 210
+          C 294 238, 238 240, 226 216
+          C 252 212, 286 206, 300 198
+          C 300 164, 362 164, 362 196
+          C 362 222, 306 226, 300 200
+          L 360 196
+          C 372 190, 380 150, 388 110
+          C 392 92, 406 92, 409 110
+          L 406 215
+          C 406 230, 394 229, 391 218
+          C 414 215, 450 214, 482 215
+          L 482 130
+          C 492 104, 460 86, 454 122
+          C 460 148, 474 168, 484 175
+          C 508 172, 524 169, 532 168
+        "/>
+        <!-- 清晰可辨的连笔 Self：S 标准形 + e 闭环+横杠 + l 高挑小环 + f 钩+竖+中横，居中 -->
+        <path id="word" transform="translate(6,5)" d="
+          M 292 152
+          C 292 126, 234 126, 233 158
+          C 232 188, 294 186, 294 210
+          C 294 238, 238 240, 226 216
+          C 252 212, 286 206, 300 198
+          C 300 164, 362 164, 362 196
+          C 362 222, 306 226, 300 200
+          L 360 196
+          C 372 190, 380 150, 388 110
+          C 392 92, 406 92, 409 110
+          L 406 215
+          C 406 230, 394 229, 391 218
+          C 414 215, 450 214, 482 215
+          L 482 130
+          C 492 104, 460 86, 454 122
+          C 460 148, 474 168, 484 175
+          C 508 172, 524 169, 532 168
+        "/>
+
+        <g id="pen">
+          <ellipse id="penTrail" rx="22" ry="5" fill="url(#tipGlow)" opacity="0"/>
+          <circle id="penTip" r="8" fill="url(#tipGlow)" opacity="0"/>
+        </g>
+        <g id="particles"></g>
+      </svg>
+    </div>
+
+    <div class="hint">点击任意处重播</div>
+  </div>
+
+<script>
+const svg = document.getElementById('svg');
+const word = document.getElementById('word');
+const wordBorder = document.getElementById('wordBorder');
+const penTip = document.getElementById('penTip');
+const penTrail = document.getElementById('penTrail');
+const particlesG = document.getElementById('particles');
+const stage = document.getElementById('stage');
+
+const LEN = word.getTotalLength();
+word.style.strokeDasharray = LEN;
+word.style.strokeDashoffset = LEN;
+wordBorder.style.strokeDasharray = LEN;
+wordBorder.style.strokeDashoffset = LEN;
+
+const T_WRITE = 1900;
+const T_HOLD  = 800;
+const T_FADE  = 500;
+const CYCLE   = T_WRITE + T_HOLD + T_FADE;  // 总时长 3.2s（完成后实体展示延长 0.2s）
+
+let particles = [];
+let start = null;
+
+function spawnParticle(x, y){
+  if(particles.length > 110) return;
+  const ang = Math.random()*Math.PI*2;
+  const sp = 0.4 + Math.random()*1.2;
+  const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  const r = 1.4 + Math.random()*2.6;
+  c.setAttribute('r', r);
+  c.setAttribute('fill','url(#particle)');
+  particlesG.appendChild(c);
+  particles.push({el:c, x, y, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp - 0.55, life:1});
+}
+
+function frame(ts){
+  if(start===null) start = ts;
+  let t = (ts - start) % CYCLE;
+
+  const writing = t < T_WRITE;
+  const holding = t >= T_WRITE && t < T_WRITE + T_HOLD;
+  const fading  = t >= T_WRITE + T_HOLD;
+
+  if(writing){
+    const p = t / T_WRITE;
+    word.style.strokeDashoffset = LEN * (1 - p);
+    wordBorder.style.strokeDashoffset = LEN * (1 - p);
+    const pt = word.getPointAtLength(LEN * p);
+    const pa = word.getPointAtLength(Math.max(0, LEN*p - 2));
+    const pb = word.getPointAtLength(Math.min(LEN, LEN*p + 2));
+    const ang = Math.atan2(pb.y - pa.y, pb.x - pa.x) * 180/Math.PI;
+    penTip.setAttribute('cx', pt.x);
+    penTip.setAttribute('cy', pt.y);
+    penTip.setAttribute('opacity', 0.95);
+    penTrail.setAttribute('cx', pt.x);
+    penTrail.setAttribute('cy', pt.y);
+    penTrail.setAttribute('transform', `rotate(${ang} ${pt.x} ${pt.y})`);
+    penTrail.setAttribute('opacity', 0.6);
+    if(Math.random() < 0.85) spawnParticle(pt.x, pt.y);
+  } else {
+    penTip.setAttribute('opacity', 0);
+    penTrail.setAttribute('opacity', 0);
+  }
+
+  if(holding) word.classList.add('done');
+  else        word.classList.remove('done');
+
+  if(holding) wordBorder.classList.add('done');
+  else        wordBorder.classList.remove('done');
+
+  if(fading) stage.classList.add('fading');
+  else       stage.classList.remove('fading');
+
+  for(let i=particles.length-1; i>=0; i--){
+    const pt = particles[i];
+    pt.x += pt.vx; pt.y += pt.vy;
+    pt.vy -= 0.012;
+    pt.vx *= 0.98;
+    pt.life -= 0.022;
+    if(pt.life <= 0){
+      pt.el.remove();
+      particles.splice(i,1);
+      continue;
+    }
+    pt.el.setAttribute('cx', pt.x);
+    pt.el.setAttribute('cy', pt.y);
+    pt.el.setAttribute('opacity', pt.life);
+  }
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+stage.addEventListener('click', ()=>{
+  start = null;
+  particles.forEach(p=>p.el.remove());
+  particles = [];
+  word.style.strokeDashoffset = LEN;
+  word.classList.remove('done');
+  wordBorder.style.strokeDashoffset = LEN;
+  wordBorder.classList.remove('done');
+  stage.classList.remove('fading');
+});
+</script>
+</body>
+</html>
